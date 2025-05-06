@@ -1,18 +1,73 @@
-import { useState } from "react"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
-import { fetchTodos } from "../lib/apiClient"
+import { FormEvent, useState } from "react"
+import {
+    keepPreviousData,
+    useQueryClient,
+    useMutation,
+    useQuery,
+} from "@tanstack/react-query"
+import { addTodo, fetchTodos } from "../lib/apiClient"
 
 export default function Todo() {
     const [page, setPage] = useState(1)
     const [newTodo, setNewTodo] = useState("")
 
-    const LIMIT = 5;
+    const LIMIT = 5
+    const queryClient = useQueryClient()
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ["todos", page],
         queryFn: () => fetchTodos(page, LIMIT),
         placeholderData: keepPreviousData,
     })
+
+    const addTodoQuery = useMutation({
+        mutationFn: addTodo,
+        onSuccess: () => {
+            // Here the order of the queries is important
+            // We need to update the current page first, then invalidate all queries
+            // to re-fetch the data
+            // This is because the current page data is already in the cache
+            // and we want to update it with the new todo
+            // If we invalidate the queries first, the current page data will be re-fetched
+            // and the new todo will not be added to the current page
+            // This technique is called optimistic update
+            setNewTodo("")
+            queryClient.setQueryData(
+                ["todos", page],
+                (oldData: typeof data) => {
+                    if (!oldData) return
+                    const lastPage = Math.ceil((oldData?.total || 1) / LIMIT)
+                    if (page === lastPage) {
+                        return {
+                            ...oldData,
+                            data: [
+                                ...oldData.data,
+                                {
+                                    id: oldData.total + 1,
+                                    title: newTodo,
+                                    done: false,
+                                },
+                            ],
+                            total: oldData.total + 1,
+                        }
+                    } else {
+                        return oldData
+                    }
+                }
+            )
+            queryClient.invalidateQueries({ queryKey: ["todos"] })
+        },
+        onError: (error) => {
+            console.error("Error adding todo:", error)
+        },
+    })
+
+    const handleSubmit = (e: FormEvent) => {
+        e.preventDefault()
+        const trimmedTodo = newTodo.trim()
+        if (trimmedTodo === "") return
+        addTodoQuery.mutate(trimmedTodo)
+    }
 
     if (isLoading) return <div>Loading...</div>
     if (isError) return <div>Error loading todos</div>
@@ -21,7 +76,7 @@ export default function Todo() {
         <div className="Todo">
             <h1>Todos</h1>
 
-            <form style={{ marginBottom: "1.5rem" }}>
+            <form onSubmit={handleSubmit} style={{ marginBottom: "1.5rem" }}>
                 <input
                     type="text"
                     value={newTodo}
