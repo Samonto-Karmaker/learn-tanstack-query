@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { fetchTodos } from "../lib/apiClient"
 
 export default function Todo() {
@@ -11,7 +11,7 @@ export default function Todo() {
     const { data, isLoading, isError } = useQuery({
         queryKey: ["todos", page],
         queryFn: () => fetchTodos(page, LIMIT),
-        staleTime: 1000 * 60 * 5, // stale for 5 minutes meaning will cache the data for 5 minutes
+        placeholderData: keepPreviousData,
     })
 
     if (isLoading) return <div>Loading...</div>
