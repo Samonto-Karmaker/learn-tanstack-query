@@ -5,7 +5,7 @@ type FetchOptions = {
     headers?: Record<string, string>;
 };
 
-const BASE_URL = "http://localhost:5000/api/v1"; 
+const BASE_URL = "/api/todos"; 
 
 class ApiClient {
     private async sendRequest<T>(
