@@ -1,55 +1,43 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type FetchOptions = {
-    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-    body?: any;
-    headers?: Record<string, string>;
-};
+import { Todo } from "../types/Todo"
 
-const BASE_URL = "/api/todos"; 
+const API_URL = "/api/todos"
 
-class ApiClient {
-    private async sendRequest<T>(
-        url: string,
-        options: FetchOptions = { method: "GET" }
-    ): Promise<T> {
-        const { method, body, headers } = options;
-        const defaultHeaders = {
-            "Content-Type": "application/json",
-            ...headers,
-        };
-
-        const response = await fetch(`${BASE_URL}${url}`, {
-            ...options,
-            method: method,
-            headers: defaultHeaders,
-            body: body ? JSON.stringify(body) : undefined,
-            credentials: "include",
-        });
-
-        const result = await response.json();
-        return result;
+export async function fetchTodos(page: number, limit: number = 3) {
+    const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`)
+    if (!response.ok) {
+        throw new Error("Failed to fetch todos")
     }
-
-    public async get<T>(url: string, headers?: Record<string, string>): Promise<T> {
-        return this.sendRequest<T>(url, { method: "GET", headers });
-    }
-
-    public async post<T>(url: string, body: any, headers?: Record<string, string>): Promise<T> {
-        return this.sendRequest<T>(url, { method: "POST", body, headers });
-    }
-
-    public async put<T>(url: string, body: any, headers?: Record<string, string>): Promise<T> {
-        return this.sendRequest<T>(url, { method: "PUT", body, headers });
-    }
-
-    public async patch<T>(url: string, body: any, headers?: Record<string, string>): Promise<T> {
-        return this.sendRequest<T>(url, { method: "PATCH", body, headers });
-    }
-
-    public async delete<T>(url: string, headers?: Record<string, string>): Promise<T> {
-        return this.sendRequest<T>(url, { method: "DELETE", headers });
-    }
+    return response.json() as Promise<{ data: Todo[]; total: number }>
 }
 
-const apiClient = new ApiClient();
-export default apiClient;
+export async function addTodo(title: string) {
+    const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+    })
+    if (!response.ok) {
+        throw new Error("Failed to add todo")
+    }
+    return response.json() as Promise<Todo>
+}
+
+export async function toggleTodo(id: number) {
+    const response = await fetch(`${API_URL}/${id}`, {
+        method: "PATCH",
+    })
+    if (!response.ok) {
+        throw new Error("Failed to toggle todo")
+    }
+    return response.json() as Promise<Todo>
+}
+
+export async function deleteTodo(id: number) {
+    const response = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+    })
+    if (!response.ok) {
+        throw new Error("Failed to delete todo")
+    }
+    return response.json() as Promise<{ message: string }>
+}
