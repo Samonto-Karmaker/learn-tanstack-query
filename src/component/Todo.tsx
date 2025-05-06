@@ -5,7 +5,7 @@ import {
     useMutation,
     useQuery,
 } from "@tanstack/react-query"
-import { addTodo, fetchTodos } from "../lib/apiClient"
+import { addTodo, fetchTodos, toggleTodo } from "../lib/apiClient"
 
 export default function Todo() {
     const [page, setPage] = useState(1)
@@ -20,7 +20,7 @@ export default function Todo() {
         placeholderData: keepPreviousData,
     })
 
-    const addTodoQuery = useMutation({
+    const addTodoMutation = useMutation({
         mutationFn: addTodo,
         onSuccess: () => {
             // Here the order of the queries is important
@@ -62,11 +62,21 @@ export default function Todo() {
         },
     })
 
+    const toggleTodoMutation = useMutation({
+        mutationFn: (id: number) => toggleTodo(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["todos"] })
+        },
+        onError: (error) => {
+            console.error("Error toggling todo:", error)
+        },
+    })
+
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
         const trimmedTodo = newTodo.trim()
         if (trimmedTodo === "") return
-        addTodoQuery.mutate(trimmedTodo)
+        addTodoMutation.mutate(trimmedTodo)
     }
 
     if (isLoading) return <div>Loading...</div>
@@ -95,7 +105,14 @@ export default function Todo() {
 
             <ul>
                 {data?.data.map((todo) => (
-                    <li key={todo.id}>{todo.title}</li>
+                    <li key={todo.id}>
+                        <span
+                            onClick={() => toggleTodoMutation.mutate(todo.id)}
+                            className={todo.done ? "done" : ""}
+                        >
+                            {todo.title}
+                        </span>
+                    </li>
                 ))}
             </ul>
 
