@@ -5,7 +5,7 @@ import {
     useMutation,
     useQuery,
 } from "@tanstack/react-query"
-import { addTodo, fetchTodos, toggleTodo } from "../lib/apiClient"
+import { addTodo, deleteTodo, fetchTodos, toggleTodo } from "../lib/apiClient"
 
 export default function Todo() {
     const [page, setPage] = useState(1)
@@ -72,6 +72,28 @@ export default function Todo() {
         },
     })
 
+    const deleteTodoMutation = useMutation({
+        mutationFn: (id: number) => deleteTodo(id),
+        onSuccess: () => {
+            queryClient.setQueryData(
+                ["todos", page],
+                (oldData: typeof data, id: number) => {
+                    if (!oldData) return
+                    const newTodos = oldData.data.filter((todo) => todo.id !== id)
+                    return {
+                        ...oldData,
+                        data: newTodos,
+                        total: oldData.total - 1,
+                    }
+                }
+            )
+            queryClient.invalidateQueries({ queryKey: ["todos"] })
+        },
+        onError: (error) => {
+            console.error("Error deleting todo:", error)
+        },
+    })
+
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault()
         const trimmedTodo = newTodo.trim()
@@ -112,6 +134,12 @@ export default function Todo() {
                         >
                             {todo.title}
                         </span>
+                        <button
+                            className="delete"
+                            onClick={() => deleteTodoMutation.mutate(todo.id)}
+                        >
+                            x
+                        </button>
                     </li>
                 ))}
             </ul>
