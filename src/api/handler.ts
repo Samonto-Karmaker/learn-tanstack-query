@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { todos, paginate } from "./db";
-import { Todo } from "../types/todo";
+import { Todo } from "../types/Todo";
 
 interface TodoRequestBody {
     title: string;

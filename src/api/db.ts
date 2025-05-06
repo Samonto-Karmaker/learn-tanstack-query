@@ -1,4 +1,4 @@
-import { Todo } from "../types/todo";
+import { Todo } from "../types/Todo";
 
 // Define the todos array with the Todo type
 export const todos: Todo[] = [
