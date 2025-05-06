@@ -1,5 +1,7 @@
-// db.js
-export let todos = [
+import { Todo } from "../types/todo";
+
+// Define the todos array with the Todo type
+export const todos: Todo[] = [
     { id: 1, title: "Learn React", done: false },
     { id: 2, title: "Learn MSW", done: false },
     { id: 3, title: "Learn React Query", done: true },
@@ -22,8 +24,12 @@ export let todos = [
     { id: 20, title: "Network with Professionals", done: true },
 ];
 
-// Pagination helper
-export function paginate(array, page = 1, limit = 3) {
+// Pagination helper with type annotations
+export function paginate<T>(
+    array: T[],
+    page: number = 1,
+    limit: number = 3
+): T[] {
     const start = (page - 1) * limit;
     return array.slice(start, start + limit);
 }

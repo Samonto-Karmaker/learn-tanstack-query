@@ -1,6 +1,10 @@
-// handlers.js
 import { http, HttpResponse } from "msw";
 import { todos, paginate } from "./db";
+import { Todo } from "../types/todo";
+
+interface TodoRequestBody {
+    title: string;
+}
 
 export const handlers = [
     // 1. Get all todos (with pagination)
@@ -15,10 +19,13 @@ export const handlers = [
 
     // 2. Add a todo
     http.post("/api/todos", async ({ request }) => {
-        const { title } = await request.json();
-        const newTodo = {
-            id: todos.length,
-            title,
+        const body = (await request.json()) as TodoRequestBody;
+        if (!body?.title) {
+            return new HttpResponse("Title is required", { status: 400 });
+        }
+        const newTodo: Todo = {
+            id: todos.length + 1, // Ensure unique ID
+            title: body.title,
             done: false,
         };
         todos.push(newTodo);
